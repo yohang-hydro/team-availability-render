@@ -61,7 +61,6 @@ def init_db():
                 )
             """)
             defaults = {
-                "meeting_duration": "60",
                 "title": "Find a Meeting Time",
                 "description": "Select all times that work for you. We will combine everyone’s availability to find the best overlap.",
             }
@@ -98,43 +97,6 @@ def overlap_data():
                     counts[d][s] += 1
                     names[d][s].append(p["name"])
     return people, submitted, counts, names
-
-
-def _add_minutes(t, mins):
-    h, m = map(int, t.split(":"))
-    total = h * 60 + m + mins
-    return f"{total // 60:02d}:{total % 60:02d}"
-
-
-def best_windows(duration, submitted, names):
-    nslots = max(1, duration // 30)
-    out = []
-
-    for d in DAYS:
-        for i in range(0, len(SLOTS) - nslots + 1):
-            window = SLOTS[i : i + nslots]
-            common = set(names[d][window[0]])
-            for s in window[1:]:
-                common &= set(names[d][s])
-            out.append(
-                {
-                    "day": d,
-                    "start": window[0],
-                    "end": _add_minutes(window[0], duration),
-                    "count": len(common),
-                    "total": len(submitted),
-                    "names": sorted(common),
-                }
-            )
-
-    out.sort(
-        key=lambda x: (
-            -x["count"],
-            DAYS.index(x["day"]),
-            int(x["start"][:2]) * 60 + int(x["start"][3:]),
-        )
-    )
-    return out[:5]
 
 
 @app.get("/")
@@ -195,7 +157,6 @@ def save():
 @app.get("/api/overlap")
 def overlap():
     people, submitted, counts, names = overlap_data()
-    duration = int(get_settings().get("meeting_duration", "60"))
     return jsonify(
         {
             "total_people": len(people),
@@ -203,8 +164,6 @@ def overlap():
             "pending": [p["name"] for p in people if p["submitted_at"] is None],
             "counts": counts,
             "names": names,
-            "best": best_windows(duration, submitted, names),
-            "duration": duration,
         }
     )
 
@@ -230,7 +189,7 @@ def admin():
 def admin_settings():
     if not session.get("admin"):
         abort(403)
-    allowed = {"title", "description", "meeting_duration"}
+    allowed = {"title", "description"}
     with db() as con, con.cursor() as cur:
         for key in allowed:
             if key in request.form:

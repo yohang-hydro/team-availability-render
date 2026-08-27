@@ -12,7 +12,6 @@ const statusEl = document.querySelector("#status");
 const needNameEl = document.querySelector("#need-name");
 const responsesEl = document.querySelector("#responses");
 const pendingEl = document.querySelector("#pending");
-const bestEl = document.querySelector("#best");
 
 let selected = new Set();
 let dragging = false;
@@ -148,10 +147,6 @@ function formatSlot(slot) {
   return `${slot} - ${addMinutes(slot, 30)}`;
 }
 
-function formatRange(start, end) {
-  return `${start} - ${end}`;
-}
-
 function onNameTyped() {
   const wasSelectable = !gridEl.classList.contains("locked");
   if (!hasName()) {
@@ -245,24 +240,6 @@ async function save() {
   });
 }
 
-function appendBestOption(option, index) {
-  const item = document.createElement("div");
-  item.className = "option";
-
-  const left = document.createElement("div");
-  const title = document.createElement("strong");
-  title.textContent = `${index + 1}. ${option.day}, ${formatRange(option.start, option.end)}`;
-  const people = document.createElement("small");
-  people.textContent = option.names.join(", ") || "No common availability";
-  left.append(title, people);
-
-  const count = document.createElement("strong");
-  count.textContent = `${option.count}/${option.total}`;
-
-  item.append(left, count);
-  bestEl.appendChild(item);
-}
-
 async function loadOverlap() {
   try {
     const response = await fetch("/api/overlap");
@@ -277,8 +254,6 @@ async function loadOverlap() {
       ? `Waiting for: ${data.pending.join(", ")}`
       : "Everyone has responded";
 
-    bestEl.replaceChildren();
-    data.best.forEach((option, index) => appendBestOption(option, index));
     makeGrid(overlapEl, data);
   } catch {
     setStatus("Could not reach the server.");

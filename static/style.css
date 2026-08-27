@@ -45,14 +45,6 @@ body {
   max-width: 680px;
 }
 
-.tz-head {
-  font-size: 12px;
-  line-height: 1.2;
-  padding: 4px 6px;
-  white-space: normal;
-  text-align: center;
-}
-
 .identity {
   max-width: 640px;
   margin: 20px 0;
@@ -197,7 +189,7 @@ textarea {
 }
 
 .time {
-  justify-content: flex-end;
+  justify-content: center;
   padding: 0 8px;
   white-space: nowrap;
   font-size: 12px;
@@ -249,29 +241,6 @@ button:disabled {
 
 .cell span {
   font-size: 12px;
-}
-
-.best {
-  display: grid;
-  gap: 9px;
-  margin-bottom: 25px;
-}
-
-.option {
-  border: 1px solid #e2e6eb;
-  border-radius: 12px;
-  padding: 12px 14px;
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.option strong {
-  display: block;
-}
-
-.option small {
-  color: #75808f;
 }
 
 .stack {

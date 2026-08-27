@@ -33,7 +33,6 @@ On Windows PowerShell, activate with `.venv\Scripts\Activate.ps1`. Open `http://
 - 30-minute blocks
 - Click and drag selection
 - Shared team overlap heatmap
-- Automatic best-time ranking for 30/60/90/120-minute meetings
 - Expected-participant list and pending-response status
 - Password-protected admin page
 - Reset/delete participant controls

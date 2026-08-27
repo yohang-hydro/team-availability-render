@@ -27,19 +27,6 @@
             Description
             <textarea name="description">{{ settings.description }}</textarea>
           </label>
-          <label>
-            Meeting duration
-            <select name="meeting_duration">
-              {% for m in [30, 60, 90, 120] %}
-                <option
-                  value="{{ m }}"
-                  {% if settings.meeting_duration|int == m %}selected{% endif %}
-                >
-                  {{ m }} minutes
-                </option>
-              {% endfor %}
-            </select>
-          </label>
           <button class="primary">Save settings</button>
         </form>
       </section>

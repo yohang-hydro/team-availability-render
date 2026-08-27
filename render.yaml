@@ -2,6 +2,7 @@ services:
   - type: web
     name: team-availability
     runtime: python
+    plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app
     healthCheckPath: /health
@@ -10,9 +11,5 @@ services:
         generateValue: true
       - key: ADMIN_PASSWORD
         sync: false
-      - key: DATABASE_PATH
-        value: /var/data/availability.db
-    disk:
-      name: availability-data
-      mountPath: /var/data
-      sizeGB: 1
+      - key: DATABASE_URL
+        sync: false

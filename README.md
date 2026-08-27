@@ -1,39 +1,60 @@
 # Team Availability
 
-A lightweight shared meeting-time poll for Monday-Friday, 11:00 am-5:00 pm in Melbourne time, using 30-minute slots.
+A deliberately small meeting-availability web app for a shared team link.
 
-## Local run
+## Stack
 
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-export ADMIN_PASSWORD='choose-a-password'
-export SECRET_KEY='choose-a-random-secret'
-python app.py
-```
+- Flask
+- PostgreSQL
+- Vanilla HTML/CSS/JavaScript
+- Gunicorn
+- Render-compatible deployment
 
-Open `http://localhost:5000`. Admin is at `http://localhost:5000/admin`.
+The public Render service can remain on the **Free** compute plan because the app no longer stores data on Render's local filesystem. Availability is stored in an external PostgreSQL database through `DATABASE_URL`.
+
+## Features
+
+- Monday–Friday availability grid
+- 11:00 am–5:00 pm Melbourne time
+- 30-minute blocks
+- Click and drag selection
+- Shared team overlap heatmap
+- Automatic best-time ranking for 30/60/90/120-minute meetings
+- Expected-participant list and pending-response status
+- Password-protected admin page
+- Reset/delete participant controls
 
 ## Deploy on Render
 
-1. Push this folder to a GitHub repository.
-2. In Render, choose **New > Blueprint** and connect the repository containing `render.yaml`.
-3. Set `ADMIN_PASSWORD` when Render asks for it.
-4. Deploy.
-5. Share the generated `https://...onrender.com` URL with the team. Keep `/admin` for yourself.
+1. Push this repository to GitHub.
+2. Create a PostgreSQL database with a provider of your choice (for example Neon).
+3. Copy the provider's PostgreSQL connection string. It normally starts with `postgresql://`.
+4. In Render, create a **Web Service** from this GitHub repository and select the **Free** compute plan.
+5. Use:
 
-### Data persistence
+   - Build command: `pip install -r requirements.txt`
+   - Start command: `gunicorn app:app`
 
-The included `render.yaml` mounts `/var/data` and stores SQLite at `/var/data/availability.db`. Render persistent disks are attached to paid web services. Without a persistent disk, SQLite data on Render's default filesystem can be lost on restart/redeploy.
+6. Add these environment variables in Render:
 
-## Main features
+   - `DATABASE_URL` = your PostgreSQL connection string
+   - `ADMIN_PASSWORD` = a private password chosen by you
+   - `SECRET_KEY` = a long random value (Render can generate it)
 
-- Name entry with optional expected-participant list
-- Click and drag to select availability
-- Monday-Friday, 11:00-17:00, 30-minute slots
-- Team overlap heatmap
-- Best continuous meeting windows for 30/60/90/120 minutes
-- Pending-response tracking
-- Password-protected admin page
-- Add/delete participants and reset all responses
+7. Deploy.
+
+The database tables are created automatically on first startup.
+
+## URLs
+
+- Public page: `/`
+- Admin: `/admin`
+- Health check: `/health`
+
+## Updating an existing GitHub repository
+
+If you already uploaded the earlier SQLite version, replace the repository files with this version and commit/push. Render can then redeploy automatically from `main`.
+
+## Security note
+
+Do not commit `DATABASE_URL`, `ADMIN_PASSWORD`, or `SECRET_KEY` to GitHub. Store them only as Render environment variables (and in a local `.env` file if needed for development).

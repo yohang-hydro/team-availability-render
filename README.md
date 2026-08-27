@@ -2,6 +2,8 @@
 
 A deliberately small meeting-availability web app for a shared team link.
 
+Live app: [https://team-availability-render.onrender.com](https://team-availability-render.onrender.com)
+
 ## Stack
 
 - Flask
@@ -41,9 +43,9 @@ On Windows PowerShell, activate with `.venv\Scripts\Activate.ps1`. Open `http://
 ## Deploy on Render
 
 1. Push this repository to GitHub.
-2. Create a PostgreSQL database with a provider of your choice (for example Neon).
+2. Create a PostgreSQL database with a provider of your choice (for example [Neon](https://neon.com/)).
 3. Copy the provider's PostgreSQL connection string. It normally starts with `postgresql://`.
-4. In Render, create a **Web Service** from this GitHub repository and select the **Free** compute plan.
+4. In [Render](https://render.com/), create a **Web Service** from this GitHub repository and select the **Free** compute plan.
 5. Use:
 
    - Build command: `pip install -r requirements.txt`
@@ -62,6 +64,7 @@ The database tables are created automatically on first startup.
 
 ## URLs
 
+- Live app: [https://team-availability-render.onrender.com](https://team-availability-render.onrender.com)
 - Public page: `/` (asks for `TEAM_ACCESS_CODE` first)
 - Team access: `/access`
 - Admin: `/admin`

@@ -1,28 +1,55 @@
 const days = window.DAYS;
 const slots = window.SLOTS;
 
+const nameEl = document.querySelector("#name");
+const startBtn = document.querySelector("#start");
+const saveBtn = document.querySelector("#save");
+const clearBtn = document.querySelector("#clear");
+const refreshBtn = document.querySelector("#refresh");
+const gridEl = document.querySelector("#grid");
+const overlapEl = document.querySelector("#overlap");
+const statusEl = document.querySelector("#status");
+const needNameEl = document.querySelector("#need-name");
+const responsesEl = document.querySelector("#responses");
+const pendingEl = document.querySelector("#pending");
+const bestEl = document.querySelector("#best");
+
 let selected = new Set();
 let dragging = false;
 let dragMode = true;
-let started = false;
+let startedName = "";
+let busy = false;
 
 const key = (day, slot) => `${day}|${slot}`;
-const nameInput = () => document.querySelector("#name");
-const hasName = () => !!nameInput().value.trim();
-const canSelectTimes = () => started && hasName();
+const currentName = () => nameEl.value.trim();
+const hasName = () => !!currentName();
+const canSelectTimes = () => hasName() && currentName() === startedName;
+
+function setStatus(message) {
+  statusEl.textContent = message;
+}
 
 function updateNameGate() {
   const ok = canSelectTimes();
-  document.querySelector("#start").disabled = !hasName();
-  document.querySelector("#grid").classList.toggle("locked", !ok);
-  document.querySelector("#save").disabled = !ok;
-  document.querySelector("#clear").disabled = !ok;
-  document.querySelector("#need-name").hidden = ok;
+  startBtn.disabled = !hasName() || busy;
+  saveBtn.disabled = !ok || busy;
+  clearBtn.disabled = !ok || busy;
+  gridEl.classList.toggle("locked", !ok);
+  needNameEl.hidden = ok;
+  if (!ok) {
+    needNameEl.textContent = startedName && hasName()
+      ? "Name changed. Click Start selecting times again."
+      : "Enter your name, then click Start selecting times.";
+  }
 }
 
 function makeGrid(el, overlap = null) {
   el.innerHTML = "";
-  el.appendChild(document.createElement("div"));
+
+  const timezone = document.createElement("div");
+  timezone.className = "head tz-head";
+  timezone.textContent = "AEST";
+  el.appendChild(timezone);
 
   days.forEach((day) => {
     const heading = document.createElement("div");
@@ -30,8 +57,6 @@ function makeGrid(el, overlap = null) {
     heading.textContent = day;
     el.appendChild(heading);
   });
-
-  const selectable = !overlap && canSelectTimes();
 
   slots.forEach((slot) => {
     const time = document.createElement("div");
@@ -49,36 +74,31 @@ function makeGrid(el, overlap = null) {
         const count = overlap.counts[day][slot];
         const total = overlap.responses;
         const alpha = total ? 0.1 + (0.8 * count) / total : 0.05;
+        const label = document.createElement("span");
+        label.textContent = `${count}/${total || 0}`;
 
         cell.classList.add("overlap");
-        cell.innerHTML = `<span>${count}/${total || 0}</span>`;
+        cell.appendChild(label);
         cell.style.background = `rgba(36, 52, 71, ${alpha})`;
         cell.style.color = count / Math.max(total, 1) > 0.45 ? "white" : "#243447";
         cell.title = (overlap.names[day][slot] || []).join(", ")
           || "No submitted participant available";
-      } else {
-        if (selected.has(key(day, slot))) {
-          cell.classList.add("selected");
-        }
-        if (selectable) {
-          cell.onmousedown = (event) => {
-            event.preventDefault();
-            dragging = true;
-            dragMode = !selected.has(key(day, slot));
-            apply(cell);
-          };
-          cell.onmouseenter = () => {
-            if (dragging) apply(cell);
-          };
-          cell.onclick = () => {
-            if (!dragging) toggle(cell);
-          };
-        }
+      } else if (selected.has(key(day, slot))) {
+        cell.classList.add("selected");
       }
 
       el.appendChild(cell);
     });
   });
+}
+
+function selectableCellFromPoint(clientX, clientY) {
+  const node = document.elementFromPoint(clientX, clientY);
+  const cell = node && node.closest(".cell");
+  if (!cell || !gridEl.contains(cell) || cell.classList.contains("overlap")) {
+    return null;
+  }
+  return cell;
 }
 
 function apply(cell) {
@@ -92,26 +112,29 @@ function apply(cell) {
   cell.classList.toggle("selected", dragMode);
 }
 
-function toggle(cell) {
-  if (!canSelectTimes()) return;
-  const cellKey = key(cell.dataset.day, cell.dataset.slot);
-  if (selected.has(cellKey)) {
-    selected.delete(cellKey);
-  } else {
-    selected.add(cellKey);
-  }
-  cell.classList.toggle("selected");
-}
+gridEl.addEventListener("pointerdown", (event) => {
+  if (!canSelectTimes() || busy || event.button) return;
+  const cell = event.target.closest(".cell");
+  if (!cell || cell.classList.contains("overlap")) return;
+  event.preventDefault();
+  dragging = true;
+  dragMode = !selected.has(key(cell.dataset.day, cell.dataset.slot));
+  apply(cell);
+  gridEl.setPointerCapture(event.pointerId);
+});
 
-window.onmouseup = () => setTimeout(() => {
+gridEl.addEventListener("pointermove", (event) => {
+  if (!dragging) return;
+  const cell = selectableCellFromPoint(event.clientX, event.clientY);
+  if (cell) apply(cell);
+});
+
+function stopDragging() {
   dragging = false;
-}, 0);
-
-function formatTime(time) {
-  const [hour, minute] = time.split(":").map(Number);
-  const suffix = hour >= 12 ? "pm" : "am";
-  return `${hour % 12 || 12}:${String(minute).padStart(2, "0")} ${suffix}`;
 }
+
+gridEl.addEventListener("pointerup", stopDragging);
+gridEl.addEventListener("pointercancel", stopDragging);
 
 function addMinutes(time, mins) {
   const [hour, minute] = time.split(":").map(Number);
@@ -122,101 +145,144 @@ function addMinutes(time, mins) {
 }
 
 function formatSlot(slot) {
-  return `${formatTime(slot)} - ${formatTime(addMinutes(slot, 30))}`;
+  return `${slot} - ${addMinutes(slot, 30)}`;
 }
 
 function formatRange(start, end) {
-  return `${formatTime(start)} - ${formatTime(end)}`;
+  return `${start} - ${end}`;
 }
 
 function onNameTyped() {
+  const wasSelectable = !gridEl.classList.contains("locked");
   if (!hasName()) {
-    started = false;
+    startedName = "";
     selected = new Set();
-    document.querySelector("#status").textContent = "";
-  } else {
-    started = false;
+    setStatus("");
   }
   updateNameGate();
-  makeGrid(document.querySelector("#grid"));
+  if (wasSelectable !== canSelectTimes()) {
+    makeGrid(gridEl);
+  }
+}
+
+async function readJson(response) {
+  try {
+    return await response.json();
+  } catch {
+    return {};
+  }
+}
+
+async function withBusy(fn) {
+  if (busy) return;
+  busy = true;
+  updateNameGate();
+  refreshBtn.disabled = true;
+  try {
+    await fn();
+  } finally {
+    busy = false;
+    updateNameGate();
+    refreshBtn.disabled = false;
+  }
 }
 
 async function startSelecting() {
-  const name = nameInput().value.trim();
+  const name = currentName();
   if (!name) {
-    document.querySelector("#status").textContent = "Please enter your name first.";
-    nameInput().focus();
+    setStatus("Please enter your name first.");
+    nameEl.focus();
     return;
   }
 
-  started = true;
-  document.querySelector("#status").textContent = "";
-  updateNameGate();
-  switchTab("mine");
-
-  const response = await fetch("/api/person/" + encodeURIComponent(name));
-  const data = await response.json();
-  selected = new Set(data.selected.map((item) => key(item[0], item[1])));
-  makeGrid(document.querySelector("#grid"));
-  document.querySelector("#grid").scrollIntoView({
-    behavior: "smooth",
-    block: "start",
+  await withBusy(async () => {
+    setStatus("");
+    try {
+      const response = await fetch("/api/person/" + encodeURIComponent(name));
+      const data = await readJson(response);
+      if (!response.ok) {
+        setStatus(data.error || "Could not load availability.");
+        return;
+      }
+      startedName = name;
+      selected = new Set((data.selected || []).map((item) => key(item[0], item[1])));
+      switchTab("mine");
+      updateNameGate();
+      makeGrid(gridEl);
+      gridEl.scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch {
+      setStatus("Could not reach the server.");
+    }
   });
 }
 
 async function save() {
-  const name = nameInput().value.trim();
+  const name = currentName();
   if (!canSelectTimes()) {
-    document.querySelector("#status").textContent =
-      "Enter your name, then click Start selecting times.";
-    nameInput().focus();
+    setStatus("Enter your name, then click Start selecting times.");
+    nameEl.focus();
     return;
   }
 
-  const payload = [...selected].map((item) => item.split("|"));
-  const response = await fetch("/api/save", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, selected: payload }),
+  await withBusy(async () => {
+    try {
+      const payload = [...selected].map((item) => item.split("|"));
+      const response = await fetch("/api/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, selected: payload }),
+      });
+      const data = await readJson(response);
+      if (!response.ok) {
+        setStatus(data.error || "Could not save");
+        return;
+      }
+      setStatus("✓ Availability saved");
+      switchTab("team");
+    } catch {
+      setStatus("Could not reach the server.");
+    }
   });
-  const data = await response.json();
+}
 
-  if (!response.ok) {
-    document.querySelector("#status").textContent = data.error || "Could not save";
-    return;
-  }
+function appendBestOption(option, index) {
+  const item = document.createElement("div");
+  item.className = "option";
 
-  document.querySelector("#status").textContent = "✓ Availability saved";
-  switchTab("team");
-  loadOverlap();
+  const left = document.createElement("div");
+  const title = document.createElement("strong");
+  title.textContent = `${index + 1}. ${option.day}, ${formatRange(option.start, option.end)}`;
+  const people = document.createElement("small");
+  people.textContent = option.names.join(", ") || "No common availability";
+  left.append(title, people);
+
+  const count = document.createElement("strong");
+  count.textContent = `${option.count}/${option.total}`;
+
+  item.append(left, count);
+  bestEl.appendChild(item);
 }
 
 async function loadOverlap() {
-  const response = await fetch("/api/overlap");
-  const data = await response.json();
+  try {
+    const response = await fetch("/api/overlap");
+    const data = await readJson(response);
+    if (!response.ok) {
+      setStatus(data.error || "Could not load team overlap.");
+      return;
+    }
 
-  document.querySelector("#responses").textContent =
-    `Responses: ${data.responses} / ${data.total_people}`;
-  document.querySelector("#pending").textContent = data.pending.length
-    ? `Waiting for: ${data.pending.join(", ")}`
-    : "Everyone has responded";
+    responsesEl.textContent = `Responses: ${data.responses} / ${data.total_people}`;
+    pendingEl.textContent = data.pending.length
+      ? `Waiting for: ${data.pending.join(", ")}`
+      : "Everyone has responded";
 
-  const best = document.querySelector("#best");
-  best.innerHTML = "";
-  data.best.forEach((option, index) => {
-    const item = document.createElement("div");
-    item.className = "option";
-    item.innerHTML = `
-      <div>
-        <strong>${index + 1}. ${option.day}, ${formatRange(option.start, option.end)}</strong>
-        <small>${option.names.join(", ") || "No common availability"}</small>
-      </div>
-      <strong>${option.count}/${option.total}</strong>
-    `;
-    best.appendChild(item);
-  });
-
-  makeGrid(document.querySelector("#overlap"), data);
+    bestEl.replaceChildren();
+    data.best.forEach((option, index) => appendBestOption(option, index));
+    makeGrid(overlapEl, data);
+  } catch {
+    setStatus("Could not reach the server.");
+  }
 }
 
 function switchTab(id) {
@@ -231,22 +297,25 @@ function switchTab(id) {
 document.querySelectorAll(".tab").forEach((button) => {
   button.onclick = () => switchTab(button.dataset.tab);
 });
-nameInput().addEventListener("input", onNameTyped);
-nameInput().addEventListener("keydown", (event) => {
+nameEl.addEventListener("input", onNameTyped);
+nameEl.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
     event.preventDefault();
     startSelecting();
   }
 });
-document.querySelector("#start").onclick = startSelecting;
-document.querySelector("#save").onclick = save;
-document.querySelector("#clear").onclick = () => {
+startBtn.onclick = startSelecting;
+saveBtn.onclick = save;
+clearBtn.onclick = () => {
   if (!canSelectTimes()) return;
   selected.clear();
-  makeGrid(document.querySelector("#grid"));
+  makeGrid(gridEl);
 };
-document.querySelector("#refresh").onclick = loadOverlap;
+refreshBtn.onclick = () => {
+  if (busy) return;
+  loadOverlap();
+};
 
 updateNameGate();
-makeGrid(document.querySelector("#grid"));
-nameInput().focus();
+makeGrid(gridEl);
+nameEl.focus();

@@ -12,10 +12,24 @@ A deliberately small meeting-availability web app for a shared team link.
 
 The public Render service can remain on the **Free** compute plan because the app no longer stores data on Render's local filesystem. Availability is stored in an external PostgreSQL database through `DATABASE_URL`.
 
+## Local run
+
+1. Copy `.env.example` to `.env` and fill in `DATABASE_URL`, `ADMIN_PASSWORD`, and `SECRET_KEY`.
+2. Create a virtualenv, install dependencies, and start the app:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python app.py
+```
+
+On Windows PowerShell, activate with `.venv\Scripts\Activate.ps1`. Open `http://localhost:5000`.
+
 ## Features
 
 - Monday–Friday availability grid
-- 11:00 am–5:00 pm Melbourne time
+- 09:00–17:00 AEST
 - 30-minute blocks
 - Click and drag selection
 - Shared team overlap heatmap
@@ -33,7 +47,7 @@ The public Render service can remain on the **Free** compute plan because the ap
 5. Use:
 
    - Build command: `pip install -r requirements.txt`
-   - Start command: `gunicorn app:app`
+   - Start command: `gunicorn app:app --bind 0.0.0.0:$PORT`
 
 6. Add these environment variables in Render:
 

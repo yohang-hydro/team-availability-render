@@ -45,14 +45,12 @@ body {
   max-width: 680px;
 }
 
-.tz {
-  background: #fff;
-  border: 1px solid #e2e6eb;
-  border-radius: 999px;
-  padding: 8px 12px;
-  font-size: 13px;
-  color: #657080;
-  white-space: nowrap;
+.tz-head {
+  font-size: 12px;
+  line-height: 1.2;
+  padding: 4px 6px;
+  white-space: normal;
+  text-align: center;
 }
 
 .identity {
@@ -176,7 +174,7 @@ textarea {
 
 .grid {
   display: grid;
-  grid-template-columns: 158px repeat(5, 1fr);
+  grid-template-columns: 124px repeat(5, 1fr);
   gap: 6px;
   user-select: none;
 }
@@ -203,6 +201,8 @@ textarea {
   padding: 0 8px;
   white-space: nowrap;
   font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
 }
 
 .need-name {
@@ -224,6 +224,10 @@ button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
   pointer-events: none;
+}
+
+.grid:not(.locked) {
+  touch-action: none;
 }
 
 .cell {
@@ -317,7 +321,7 @@ footer a,
   }
 
   .grid {
-    grid-template-columns: 138px repeat(5, minmax(45px, 1fr));
+    grid-template-columns: 112px repeat(5, minmax(45px, 1fr));
     gap: 4px;
     overflow-x: auto;
   }
@@ -331,9 +335,5 @@ footer a,
 
   .card {
     padding: 14px;
-  }
-
-  .tz {
-    align-self: flex-start;
   }
 }

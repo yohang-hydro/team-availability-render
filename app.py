@@ -2,9 +2,23 @@ import os
 import secrets
 from datetime import datetime, timezone
 
+from dotenv import load_dotenv
 import psycopg
 from psycopg.rows import dict_row
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session, abort
+
+load_dotenv()
+
+
+def running_in_production():
+    return os.environ.get("RENDER") == "true" or os.environ.get("FLASK_ENV") == "production"
+
+
+if running_in_production():
+    if not os.environ.get("SECRET_KEY"):
+        raise RuntimeError("SECRET_KEY is required in production.")
+    if not os.environ.get("ADMIN_PASSWORD"):
+        raise RuntimeError("ADMIN_PASSWORD is required in production.")
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "change-me-in-production")
@@ -12,8 +26,8 @@ DATABASE_URL = os.environ.get("DATABASE_URL")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin")
 
 DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"]
-# Half-hour availability blocks from 11:00–11:30 through 16:30–17:00.
-SLOTS = [f"{h:02d}:{m:02d}" for h in range(11, 17) for m in (0, 30)]
+# Half-hour availability blocks from 09:00–09:30 through 16:30–17:00.
+SLOTS = [f"{h:02d}:{m:02d}" for h in range(9, 17) for m in (0, 30)]
 
 
 def db():
@@ -92,8 +106,7 @@ def _add_minutes(t, mins):
     return f"{total // 60:02d}:{total % 60:02d}"
 
 
-def best_windows(duration):
-    _, submitted, counts, names = overlap_data()
+def best_windows(duration, submitted, names):
     nslots = max(1, duration // 30)
     out = []
 
@@ -190,7 +203,7 @@ def overlap():
             "pending": [p["name"] for p in people if p["submitted_at"] is None],
             "counts": counts,
             "names": names,
-            "best": best_windows(duration),
+            "best": best_windows(duration, submitted, names),
             "duration": duration,
         }
     )
@@ -273,8 +286,8 @@ def health():
             cur.execute("SELECT 1 AS ok")
             cur.fetchone()
         return {"ok": True}
-    except Exception as exc:
-        return {"ok": False, "error": str(exc)}, 503
+    except Exception:
+        return {"ok": False}, 503
 
 
 # Gunicorn imports the module rather than executing __main__, so initialise here.

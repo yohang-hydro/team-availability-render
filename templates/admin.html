@@ -60,7 +60,11 @@
                 {{ p.name }}
                 <small>{{ "Submitted" if p.submitted_at else "Not responded" }}</small>
               </span>
-              <form action="/admin/delete/{{ p.id }}" method="post">
+              <form
+                action="/admin/delete/{{ p.id }}"
+                method="post"
+                onsubmit="return confirm('Delete this participant?')"
+              >
                 <button class="danger">Delete</button>
               </form>
             </div>

@@ -1,0 +1,8 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{ settings.title }}</title><link rel="stylesheet" href="/static/style.css"></head><body>
+<main class="wrap">
+<section class="hero"><div><h1>{{ settings.title }}</h1><p>{{ settings.description }}</p></div><span class="tz">Melbourne time · AEST/AEDT</span></section>
+<section class="identity"><label>Your name</label><input id="name" list="names" placeholder="Enter your name" autocomplete="off"><datalist id="names">{% for p in people %}<option value="{{p.name}}">{% endfor %}</datalist></section>
+<div class="tabs"><button class="tab active" data-tab="mine">My Availability</button><button class="tab" data-tab="team">Team Overlap</button></div>
+<section id="mine" class="card tabpane active"><div class="toolbar"><div><strong>Select every time that works for you</strong><small>Click or drag across cells. Click selected cells again to clear them.</small></div><div><button id="clear" class="ghost">Clear</button><button id="save" class="primary">Done</button></div></div><div id="grid" class="grid"></div><div id="status"></div></section>
+<section id="team" class="card tabpane"><div class="summary"><div><strong id="responses">Responses</strong><small id="pending"></small></div><button id="refresh" class="ghost">Refresh</button></div><h2>Best options</h2><div id="best" class="best"></div><h2>Team overlap</h2><div id="overlap" class="grid"></div></section>
+<footer><a href="/admin">Admin</a></footer></main><script>window.DAYS={{ days|tojson }};window.SLOTS={{ slots|tojson }};</script><script src="/static/app.js"></script></body></html>

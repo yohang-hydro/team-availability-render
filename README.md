@@ -14,7 +14,7 @@ The public Render service can remain on the **Free** compute plan because the ap
 
 ## Local run
 
-1. Copy `.env.example` to `.env` and fill in `DATABASE_URL`, `ADMIN_PASSWORD`, and `SECRET_KEY`.
+1. Copy `.env.example` to `.env` and fill in `DATABASE_URL`, `ADMIN_PASSWORD`, `TEAM_ACCESS_CODE`, and `SECRET_KEY`.
 2. Create a virtualenv, install dependencies, and start the app:
 
 ```bash
@@ -34,6 +34,7 @@ On Windows PowerShell, activate with `.venv\Scripts\Activate.ps1`. Open `http://
 - Click and drag selection
 - Shared team overlap heatmap
 - Expected-participant list and pending-response status
+- Shared team access code before filling availability
 - Password-protected admin page
 - Reset/delete participant controls
 
@@ -52,6 +53,7 @@ On Windows PowerShell, activate with `.venv\Scripts\Activate.ps1`. Open `http://
 
    - `DATABASE_URL` = your PostgreSQL connection string
    - `ADMIN_PASSWORD` = a private password chosen by you
+   - `TEAM_ACCESS_CODE` = the shared code teammates use to open the poll
    - `SECRET_KEY` = a long random value (Render can generate it)
 
 7. Deploy.
@@ -60,7 +62,8 @@ The database tables are created automatically on first startup.
 
 ## URLs
 
-- Public page: `/`
+- Public page: `/` (asks for `TEAM_ACCESS_CODE` first)
+- Team access: `/access`
 - Admin: `/admin`
 - Health check: `/health`
 
@@ -70,4 +73,4 @@ If you already uploaded the earlier SQLite version, replace the repository files
 
 ## Security note
 
-Do not commit `DATABASE_URL`, `ADMIN_PASSWORD`, or `SECRET_KEY` to GitHub. Store them only as Render environment variables (and in a local `.env` file if needed for development).
+Do not commit `DATABASE_URL`, `ADMIN_PASSWORD`, `TEAM_ACCESS_CODE`, or `SECRET_KEY` to GitHub. Store them only as Render environment variables (and in a local `.env` file if needed for development).

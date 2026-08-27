@@ -19,11 +19,25 @@ if running_in_production():
         raise RuntimeError("SECRET_KEY is required in production.")
     if not os.environ.get("ADMIN_PASSWORD"):
         raise RuntimeError("ADMIN_PASSWORD is required in production.")
+    if not os.environ.get("TEAM_ACCESS_CODE"):
+        raise RuntimeError("TEAM_ACCESS_CODE is required in production.")
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "change-me-in-production")
 DATABASE_URL = os.environ.get("DATABASE_URL")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin")
+TEAM_ACCESS_CODE = os.environ.get("TEAM_ACCESS_CODE", "team")
+
+OPEN_ENDPOINTS = {
+    "access",
+    "static",
+    "health",
+    "admin",
+    "admin_settings",
+    "admin_add",
+    "admin_delete",
+    "admin_reset",
+}
 
 DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"]
 # Half-hour availability blocks from 09:00–09:30 through 16:30–17:00.
@@ -97,6 +111,29 @@ def overlap_data():
                     counts[d][s] += 1
                     names[d][s].append(p["name"])
     return people, submitted, counts, names
+
+
+@app.route("/access", methods=["GET", "POST"])
+def access():
+    if session.get("team_access") and request.method == "GET":
+        return redirect(url_for("index"))
+
+    if request.method == "POST":
+        code = request.form.get("access_code", "")
+        if secrets.compare_digest(code, TEAM_ACCESS_CODE):
+            session["team_access"] = True
+            return redirect(url_for("index"))
+        return render_template("access.html", error="Incorrect access code.")
+
+    return render_template("access.html", error=None)
+
+
+@app.before_request
+def require_team_access():
+    if request.endpoint in OPEN_ENDPOINTS:
+        return None
+    if not session.get("team_access"):
+        return redirect(url_for("access"))
 
 
 @app.get("/")

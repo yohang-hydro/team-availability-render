@@ -11,5 +11,7 @@ services:
         generateValue: true
       - key: ADMIN_PASSWORD
         sync: false
+      - key: TEAM_ACCESS_CODE
+        sync: false
       - key: DATABASE_URL
         sync: false

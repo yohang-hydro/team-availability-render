@@ -1,4 +1,84 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/static/style.css"><title>Admin</title></head><body><main class="wrap"><section class="hero"><div><h1>Admin</h1><p>Manage participants and meeting settings.</p></div><a href="/">Public page</a></section>
-<section class="card"><h2>Meeting</h2><form action="/admin/settings" method="post" class="stack"><label>Title<input name="title" value="{{settings.title}}"></label><label>Description<textarea name="description">{{settings.description}}</textarea></label><label>Meeting duration<select name="meeting_duration">{% for m in [30,60,90,120] %}<option value="{{m}}" {% if settings.meeting_duration|int == m %}selected{% endif %}>{{m}} minutes</option>{% endfor %}</select></label><button class="primary">Save settings</button></form></section>
-<section class="card"><h2>Participants</h2><form action="/admin/add" method="post" class="stack"><label>Add expected participants<textarea name="names" placeholder="One name per line"></textarea></label><button class="primary">Add</button></form><div class="people">{% for p in people %}<div><span>{{p.name}} <small>{{ 'Submitted' if p.submitted_at else 'Not responded' }}</small></span><form action="/admin/delete/{{p.id}}" method="post"><button class="danger">Delete</button></form></div>{% endfor %}</div></section>
-<section class="card"><h2>Reset</h2><p>Clear all submitted availability but keep the participant list.</p><form action="/admin/reset" method="post" onsubmit="return confirm('Reset all availability?')"><button class="danger">Reset all responses</button></form></section></main></body></html>
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/static/style.css">
+    <title>Admin</title>
+  </head>
+  <body>
+    <main class="wrap">
+      <section class="hero">
+        <div>
+          <h1>Admin</h1>
+          <p>Manage participants and meeting settings.</p>
+        </div>
+        <a href="/">Public page</a>
+      </section>
+
+      <section class="card">
+        <h2>Meeting</h2>
+        <form action="/admin/settings" method="post" class="stack">
+          <label>
+            Title
+            <input name="title" value="{{ settings.title }}">
+          </label>
+          <label>
+            Description
+            <textarea name="description">{{ settings.description }}</textarea>
+          </label>
+          <label>
+            Meeting duration
+            <select name="meeting_duration">
+              {% for m in [30, 60, 90, 120] %}
+                <option
+                  value="{{ m }}"
+                  {% if settings.meeting_duration|int == m %}selected{% endif %}
+                >
+                  {{ m }} minutes
+                </option>
+              {% endfor %}
+            </select>
+          </label>
+          <button class="primary">Save settings</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Participants</h2>
+        <form action="/admin/add" method="post" class="stack">
+          <label>
+            Add expected participants
+            <textarea name="names" placeholder="One name per line"></textarea>
+          </label>
+          <button class="primary">Add</button>
+        </form>
+        <div class="people">
+          {% for p in people %}
+            <div>
+              <span>
+                {{ p.name }}
+                <small>{{ "Submitted" if p.submitted_at else "Not responded" }}</small>
+              </span>
+              <form action="/admin/delete/{{ p.id }}" method="post">
+                <button class="danger">Delete</button>
+              </form>
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Reset</h2>
+        <p>Clear all submitted availability but keep the participant list.</p>
+        <form
+          action="/admin/reset"
+          method="post"
+          onsubmit="return confirm('Reset all availability?')"
+        >
+          <button class="danger">Reset all responses</button>
+        </form>
+      </section>
+    </main>
+  </body>
+</html>
